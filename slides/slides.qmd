@@ -1,0 +1,464 @@
+---
+title: "Causal Diagrams in R with ggdag"
+author: "Malcolm Barrett"
+format: kakashi-revealjs
+---
+
+```{r setup, include=FALSE}
+options(
+  tibble.max_extra_cols = 6, 
+  tibble.width = 60
+)
+```
+
+# Why DAGs? {background-color="#23373B"}
+
+## {.center .middle}
+
+![](images/data_generating_mechanism.png)
+
+:::{.small}
+@eikofried.bsky.social
+:::
+
+## The Causal Quartet
+
+```{r}
+#| output-location: fragment
+#| code-line-numbers: "|3-5"
+library(quartets)
+library(tidyverse)
+causal_quartet |> 
+  # hide the dataset names
+  mutate(dataset = as.integer(factor(dataset)))
+```
+
+
+## 
+
+```{r}
+#| echo: false
+library(tidyverse)
+causal_quartet |> 
+  # hide the dataset names
+  mutate(dataset = as.integer(factor(dataset))) |> 
+  group_by(dataset) |>
+  mutate(exposure = scale(exposure), outcome = scale(outcome)) |> 
+  ungroup() |> 
+  ggplot(aes(exposure, outcome)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  facet_wrap(~ dataset)
+```
+
+## 
+
+```{r}
+#| echo: false
+causal_quartet |> 
+  # hide the dataset names
+  mutate(dataset = as.integer(factor(dataset))) |> 
+  group_by(dataset) |>
+  mutate(covariate = scale(covariate), exposure = scale(exposure)) |> 
+  ungroup() |> 
+  ggplot(aes(covariate, exposure)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  facet_wrap(~ dataset) 
+```
+
+## Causal Diagrams
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-width: 10
+library(ggdag)
+library(patchwork)
+
+coords <- list(
+  x = c(X = 1, Z = 3, Y = 2),
+  y = c(X = 1, Z = 1.1, Y = 1)
+)
+
+d_coll <- dagify(
+  Z ~ X + Y,
+  Y ~ X,
+  exposure = "X",
+  outcome = "Y",
+  labels = c(X = "e", Y = "o", Z = "c"),
+  coords = coords
+)
+coords <- list(
+  x = c(X = 2, Z = 1, Y = 3),
+  y = c(X = 1, Z = 1.1, Y = 1)
+)
+
+d_conf <- dagify(
+  X ~ Z,
+  Y ~ X + Z,
+  exposure = "X",
+  outcome = "Y",
+  labels = c(X = "e", Y = "o", Z = "c"),
+  coords = coords
+)
+
+coords <- list(
+  x = c(X = 1, Z = 2, Y = 3),
+  y = c(X = 1, Z = 1.1, Y = 1)
+)
+
+d_med <- dagify(
+  Z ~ X,
+  Y ~ Z,
+  exposure = "X",
+  outcome = "Y",
+  labels = c(X = "e", Y = "o", Z = "c"),
+  coords = coords
+)
+
+coords <- list(
+  x = c(u1 = 1, u2 = 2, X = 3, Z = 3, Y = 5),
+  y = c(u1 = 2, u2 = 4, X = 1, Z = 2, Y = 2)
+)
+
+d_mbias <- dagify(
+  Z ~ u1 + u2,
+  X ~ u1,
+  Y ~ X + u2,
+  exposure = "X",
+  outcome = "Y",
+  labels = c(X = "e", Y = "o", Z = "c"),
+  coords = coords
+)
+
+p_coll <- d_coll |>
+  tidy_dagitty() |>
+  mutate(covariate = ifelse(label == "c", "covariate", NA_character_)) |> 
+  ggplot(
+    aes(x = x, y = y, xend = xend, yend = yend)
+  ) +
+  geom_dag_point(aes(color = covariate)) +
+  geom_dag_edges(edge_color = "grey70") +
+  geom_dag_text(aes(label = label)) +
+  theme_dag() +
+  coord_cartesian(clip = "off") +
+  theme(legend.position = "bottom") +
+  ggtitle("(1) Collider") + 
+  guides(color = guide_legend(
+    title = NULL, 
+    keywidth = unit(1.4, "mm"), 
+    override.aes = list(size = 3.4, shape = 15)
+  )) +
+  scale_color_discrete(breaks = "covariate", na.value = "grey70")
+
+
+p_conf <- d_conf |>
+  tidy_dagitty() |>
+  mutate(covariate = ifelse(label == "c", "covariate", NA_character_)) |> 
+  ggplot(
+    aes(x = x, y = y, xend = xend, yend = yend)
+  ) +
+  geom_dag_point(aes(color = covariate)) +
+  geom_dag_edges(edge_color = "grey70") +
+  geom_dag_text(aes(label = label)) +
+  theme_dag() +
+  coord_cartesian(clip = "off") +
+  theme(legend.position = "bottom") +
+  ggtitle("(2) Confounder") + 
+  guides(color = guide_legend(
+    title = NULL, 
+    keywidth = unit(1.4, "mm"), 
+    override.aes = list(size = 3.4, shape = 15)
+  )) +
+  scale_color_discrete(breaks = "covariate", na.value = "grey70")
+
+p_med <- d_med |>
+  tidy_dagitty() |>
+  mutate(covariate = ifelse(label == "c", "covariate", NA_character_)) |> 
+  ggplot(
+    aes(x = x, y = y, xend = xend, yend = yend)
+  ) +
+  geom_dag_point(aes(color = covariate)) +
+  geom_dag_edges(edge_color = "grey70") +
+  geom_dag_text(aes(label = label)) +
+  theme_dag() +
+  coord_cartesian(clip = "off") +
+  theme(legend.position = "bottom") +
+  ggtitle("(3) Mediator")  + 
+  guides(color = guide_legend(
+    title = NULL, 
+    keywidth = unit(1.4, "mm"), 
+    override.aes = list(size = 3.4, shape = 15)
+  )) +
+  scale_color_discrete(breaks = "covariate", na.value = "grey70")
+
+
+p_m_bias <- d_mbias |>
+  tidy_dagitty() |>
+  mutate(covariate = ifelse(label == "c", "covariate", NA_character_)) |> 
+  ggplot(
+    aes(x = x, y = y, xend = xend, yend = yend)
+  ) +
+  geom_dag_point(aes(color = covariate)) +
+  geom_dag_edges(edge_color = "grey70") +
+  geom_dag_text(aes(label = label)) +
+  geom_dag_text(
+    aes(label = name),
+    data = \(.df) filter(.df, name %in% c("u1", "u2"))
+  ) +
+  theme_dag() +
+  coord_cartesian(clip = "off") +
+  ggtitle("(4) M-bias") +
+  theme(legend.position = "bottom") + 
+  guides(color = guide_legend(
+    title = NULL, 
+    keywidth = unit(1.4, "mm"), 
+    override.aes = list(size = 3.4, shape = 15)
+  )) +
+  scale_color_discrete(breaks = "covariate", na.value = "grey70")
+
+(p_coll + p_conf) / (p_med + p_m_bias)
+```
+
+# Why ggdag? {background-color="#23373B"}
+
+## {background-color="#23373B"}
+
+::: {.center}
+![](images/ggdag.png){width=500}
+:::
+
+## 
+
+```{r}
+#| include: false
+set.seed(12345)
+```
+
+
+```{r}
+#| message: false
+#| output-location: slide
+#| fig-width: 7
+library(ggdag)
+library(ggplot2)
+theme_set(theme_dag())
+
+dag <- dagify(
+  z ~ a + c + d + e + f,
+  d ~ a + b + c,
+  e ~ a + b + c,
+  f ~ a + b + c,
+  coords = time_ordered_coords()
+)
+
+ggdag(dag)
+```
+
+##
+
+```{r}
+#| message: false
+#| output-location: slide
+#| fig-width: 7.5
+#| code-line-numbers: "|4|6-8|9-16"
+library(ggplot2)
+
+dag %>%
+  node_drelationship("b", "z") %>%
+  ggplot(aes(x, y, xend = xend, yend = yend, color = d_relationship)) +
+  geom_dag_edges() + 
+  geom_dag_point() +
+  geom_dag_text(color = "white") +
+  theme_dag() + 
+  theme(legend.position = "bottom") + 
+  scale_color_manual(
+    name = NULL, 
+    limits = "d-connected", 
+    values = "steelblue", 
+    na.value = "grey80"
+  )
+``` 
+
+## Causal Inference in R: The Book
+
+</br>
+</br>
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+![](images/ch_5.png){style="transform: rotate(-15deg);"}
+:::
+
+::: {.column width="50%"}
+![](images/ch_6.png){style="transform: rotate(15deg);"}
+:::
+
+::::
+
+</br>
+
+::: {.center .huge}
+<https://www.r-causal.org/>
+:::
+
+# Design {background-color="#23373B"}
+
+## {background-color="#23373B"}
+
+1. DAGs are data and plotting them is data visualization
+2. Quick plots for most actions
+3. Quick plots are composed of data and ggplot2 functions
+
+## Data Structure
+
+```{r}
+dag
+```
+
+## Data Structure
+
+```{r}
+as_tidy_dagitty(dag)
+```
+
+## Plotting API
+
+```{r}
+#| output-location: fragment
+ggdag(dag)
+```
+
+## Plotting API
+
+```{r}
+#| output-location: fragment
+ggplot(dag, aes(x, y, xend = xend, yend = yend)) +
+  geom_dag_edges() + 
+  geom_dag_point() +
+  geom_dag_text()
+```
+
+## Quick plots as composed 
+
+```{r}
+#| output-location: slide
+#| fig-width: 8
+ggdag_adjustment_set(dag, exposure = "e", outcome = "z")
+```
+
+## Quick plots as composed 
+
+```{r}
+#| output-location: slide
+#| fig-width: 8
+vals <- c(unadjusted = "black", adjusted = "grey80")
+dag |> 
+  dag_adjustment_sets(exposure = "e", outcome = "z") |> 
+  ggplot(aes(x, y, xend = xend, yend = yend, color = adjusted, shape = adjusted)) +
+  geom_dag_edges(aes(edge_color = adjusted)) + 
+  geom_dag_point() +
+  geom_dag_text(color = "white") + 
+  facet_wrap(~ set) + 
+  scale_adjusted() + 
+  expand_plot() +
+  ggraph::scale_edge_colour_manual(values = vals, limits = names(vals))
+```
+
+
+# Lessons learned {background-color="#23373B"}
+
+## {background-color="#23373B"}
+
+1. Metageoms
+2. Being at one with ggplot2
+3. Education-driven development
+
+## DAGs and the grammar of graphics {transition="fade-out" transition-speed="slow"}
+
+```{r}
+#| eval: false
+dag |> 
+  ggplot(aes(x, y, xend = xend, yend = yend)) +
+  geom_dag_edges() +
+  geom_dag_point() +
+  geom_dag_text() 
+```
+
+## DAGs and the grammar of graphics {transition="fade-in" transition-speed="slow"}
+
+```{r}
+#| eval: false
+dag |> 
+  ggplot(aes_dag()) +
+  geom_dag()
+```
+
+## DAGs and the grammar of graphics {.small}
+
+```{r}
+#| output-location: slide
+filter_dag <- function(...) {
+  function(.x) filter(.x, ...)
+}
+
+dag |>
+  ggplot(aes_dag()) +
+  geom_dag_edges_link(
+    data = filter_dag(name != "f"),
+    edge_color = "grey95"
+  ) +
+  geom_dag_edges_link(
+    data = filter_dag(name == "f" | (name == "d" & to %in% c("f", "z"))),
+    edge_width = 1,
+    edge_color = "steelblue",
+    curvature = c(0, .5, 0)
+  ) +
+  geom_dag(use_edges = FALSE) 
+```
+
+## Working with ggplot2
+
+```{r}
+#| layout-ncol: 2
+# ggdag 0.1.0
+ggdag(confounder_triangle(), stylized = TRUE) +
+  theme_dag_gray()
+
+# ggdag 0.2.0 and after
+ggdag(confounder_triangle()) +
+  theme_gray()
+```
+
+## Education-driven development
+
+```{r}
+#| echo: false
+#| fig-width: 4
+dagify(
+  teach ~ develop,
+  write ~ teach,
+  develop ~ write
+) |> 
+  ggdag(
+    layout = "circle", 
+    use_edges = FALSE, 
+    use_nodes = FALSE, 
+    text_col = "black"
+  ) +
+  geom_dag_edges_arc(curvature = -.5)
+```
+
+## Thanks! {background-color="#23373B" .huge}
+
+:::{.nonincremental}
+R Consortium 
+
+Lucy D'Agostino McGowan & Travis Gerke
+
+The developers of ggplot2, dagitty, and ggraph
+:::
