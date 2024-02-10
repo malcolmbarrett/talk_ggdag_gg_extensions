@@ -314,13 +314,13 @@ dag %>%
 2. Quick plots for most actions
 3. Quick plots are composed of data and ggplot2 functions
 
-## Data Structure
+## Data Structure {.small}
 
 ```{r}
 dag
 ```
 
-## Data Structure
+## Data Structure {.small}
 
 ```{r}
 as_tidy_dagitty(dag)
@@ -356,6 +356,7 @@ ggdag_adjustment_set(dag, exposure = "e", outcome = "z")
 ```{r}
 #| output-location: slide
 #| fig-width: 8
+#| code-line-numbers: "|3,5-7"
 vals <- c(unadjusted = "black", adjusted = "grey80")
 dag |> 
   dag_adjustment_sets(exposure = "e", outcome = "z") |> 

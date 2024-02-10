@@ -550,7 +550,7 @@ Malcolm Barrett
 <li class="fragment">Quick plots are composed of data and ggplot2 functions</li>
 </ol>
 </section>
-<section id="data-structure" class="slide level2">
+<section id="data-structure" class="slide level2 small">
 <h2>Data Structure</h2>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>dag</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -581,7 +581,7 @@ f -&gt; z
 </div>
 </div>
 </section>
-<section id="data-structure-1" class="slide level2">
+<section id="data-structure-1" class="slide level2 small">
 <h2>Data Structure</h2>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="fu">as_tidy_dagitty</span>(dag)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -660,7 +660,7 @@ f -&gt; z
 </div></section><section id="quick-plots-as-composed-1" class="slide level2">
 <h2>Quick plots as composed</h2>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>vals <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">unadjusted =</span> <span class="st">"black"</span>, <span class="at">adjusted =</span> <span class="st">"grey80"</span>)</span>
+<div class="sourceCode cell-code" id="cb12" data-code-line-numbers="|3,5-7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>vals <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">unadjusted =</span> <span class="st">"black"</span>, <span class="at">adjusted =</span> <span class="st">"grey80"</span>)</span>
 <span id="cb12-2"><a href="#cb12-2"></a>dag <span class="sc">|&gt;</span> </span>
 <span id="cb12-3"><a href="#cb12-3"></a>  <span class="fu">dag_adjustment_sets</span>(<span class="at">exposure =</span> <span class="st">"e"</span>, <span class="at">outcome =</span> <span class="st">"z"</span>) <span class="sc">|&gt;</span> </span>
 <span id="cb12-4"><a href="#cb12-4"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(x, y, <span class="at">xend =</span> xend, <span class="at">yend =</span> yend, <span class="at">color =</span> adjusted, <span class="at">shape =</span> adjusted)) <span class="sc">+</span></span>
@@ -774,8 +774,8 @@ f -&gt; z
 </div>
 </div>
 </section>
-<section id="education-drive-development" class="slide level2">
-<h2>Education-drive development</h2>
+<section id="education-driven-development" class="slide level2">
+<h2>Education-driven development</h2>
 
 <img data-src="slides_files/figure-revealjs/unnamed-chunk-18-1.png" style="width:80.0%" class="r-stretch quarto-figure-center"></section>
 <section id="thanks" class="slide level2 huge" data-background-color="#23373B">
